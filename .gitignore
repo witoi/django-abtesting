@@ -1,3 +1,4 @@
 *.pyc
 *.egg
 Splango.egg-info/
+example_project/

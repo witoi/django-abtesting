@@ -1,7 +1,7 @@
 from splango import RequestExperimentManager
 
-class ExperimentsMiddleware:
 
+class ExperimentsMiddleware:
     def process_request(self, request):
         request.experiments = RequestExperimentManager(request)
         return None
@@ -10,3 +10,4 @@ class ExperimentsMiddleware:
         if getattr(request, "experiments", None):
             request.experiments.finish(response)
         return response
+

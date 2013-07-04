@@ -41,13 +41,13 @@ class RequestExperimentManager:
 
         if self.request.session.get(SPLANGO_STATE) is None:
             self.request.session[SPLANGO_STATE] = S_UNKNOWN
-            
+
             if self.is_first_visit():
-                
+
                 logging.info("SPLANGO! First visit!")
 
                 first_visit_goalname = getattr(settings,
-                                               "SPLANGO_FIRST_VISIT_GOAL", 
+                                               "SPLANGO_FIRST_VISIT_GOAL",
                                                None)
 
                 if first_visit_goalname:
@@ -66,8 +66,8 @@ class RequestExperimentManager:
                                           params["variant"])
 
         elif action == "log_goal":
-            g = GoalRecord.record(self.get_subject(), 
-                                  params["goal_name"], 
+            g = GoalRecord.record(self.get_subject(),
+                                  params["goal_name"],
                                   params["request_info"],
                                   extra=params.get("extra"))
 
@@ -108,12 +108,12 @@ class RequestExperimentManager:
             postjs = ' } catch(e) { alert("DEBUG notice: Splango encountered a javascript error when attempting to confirm this user as a human. Is jQuery loaded?\\n\\nYou may notice inconsistent experiment enrollments until this is fixed.\\n\\nDetails:\\n"+e.toString()); }'
 
         try:
-            url = reverse("splango-confirm-human")
+            url = reverse("splango.views.confirm_human")
         except NoReverseMatch:
-            url = "/splango/confirm_human/"
+            raise RuntimeError('Must include splango urls')
 
         return """<script type='text/javascript'>%sjQuery.get("%s");%s</script>""" % (prejs, url, postjs)
-        
+
 
     def confirm_human(self, reqdata=None):
         logging.info("SPLANGO! Human confirmed!")
@@ -121,7 +121,7 @@ class RequestExperimentManager:
 
         for (action, params) in self.request.session.get(SPLANGO_QUEUED_UPDATES, []):
             self.process_from_queue(action, params)
-                
+
 
     def finish(self, response):
         curstate = self.request.session.get(SPLANGO_STATE, S_UNKNOWN)
@@ -139,7 +139,7 @@ class RequestExperimentManager:
 
             else:
                 # User has just logged in (or registered).
-                # We'll merge the session's current Subject with 
+                # We'll merge the session's current Subject with
                 # an existing Subject for this user, if exists,
                 # or simply set the subject.registered_as field.
 
@@ -155,7 +155,7 @@ class RequestExperimentManager:
                         # merge old subject's activity into new
                         old_subject.merge_into(existing_subject)
 
-                    # whether we had an old_subject or not, we must 
+                    # whether we had an old_subject or not, we must
                     # set session to use our existing_subject
                     self.request.session[SPLANGO_SUBJECT] = existing_subject
 
@@ -181,8 +181,8 @@ class RequestExperimentManager:
                 response.content = replace_insensitive(smart_unicode(response.content), u'</body>', smart_unicode(self.render_js() + u'</body>'))
 
         return response
-        
-        
+
+
 
     def get_subject(self):
         assert self.request.session[SPLANGO_STATE] == S_HUMAN, "Hey, you can't call get_subject until you know the subject is a human!"
@@ -193,7 +193,7 @@ class RequestExperimentManager:
             sub = self.request.session[SPLANGO_SUBJECT] = Subject()
             sub.save()
             logging.info("SPLANGO! created subject: %s" % str(sub))
-        
+
         return sub
 
 

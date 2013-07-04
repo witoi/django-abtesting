@@ -1,13 +1,13 @@
 #!/usr/bin/env python
+from setuptools import setup
 
-from distutils.core import setup
 
-setup(name='Splango',
+setup(name='django-abtesting',
       version='0.1',
-      description='Split (A/B) testing library for Django',
-      author='Shimon Rura',
-      author_email='shimon@rura.org',
-      url='http://github.com/shimon/Splango',
-      packages=['splango','splango.templatetags'],
-      package_data={'splango': ['templates/*.html', 'templates/*/*.html']}
+      description='A/B testing library for Django',
+      author='Pedro Buron',
+      author_email='pedro@witoi.com',
+      url='http://github.com/witoi/django-abtesting',
+      packages=['abtesting', 'abtesting.templatetags'],
+      package_data={'abtesting': ['templates/*.html', 'templates/*/*.html']}
 )
