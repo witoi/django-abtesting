@@ -4,11 +4,11 @@ import logging
 from django.utils.encoding import smart_unicode
 from django.core.urlresolvers import reverse, NoReverseMatch
 
-from splango.models import Subject, Experiment, Enrollment, GoalRecord
+from abtesting.models import Subject, Experiment, Enrollment, GoalRecord
 
-SPLANGO_STATE = "SPLANGO_STATE"
-SPLANGO_SUBJECT = "SPLANGO_SUBJECT"
-SPLANGO_QUEUED_UPDATES = "SPLANGO_QUEUED_UPDATES"
+abtesting_STATE = "abtesting_STATE"
+abtesting_SUBJECT = "abtesting_SUBJECT"
+abtesting_QUEUED_UPDATES = "abtesting_QUEUED_UPDATES"
 S_UNKNOWN = "UNKNOWN"
 S_HUMAN = "HUMAN"
 
@@ -39,15 +39,15 @@ class RequestExperimentManager:
         self.user_at_init = request.user
         self.queued_actions = []
 
-        if self.request.session.get(SPLANGO_STATE) is None:
-            self.request.session[SPLANGO_STATE] = S_UNKNOWN
+        if self.request.session.get(abtesting_STATE) is None:
+            self.request.session[abtesting_STATE] = S_UNKNOWN
 
             if self.is_first_visit():
 
-                logging.info("SPLANGO! First visit!")
+                logging.info("abtesting! First visit!")
 
                 first_visit_goalname = getattr(settings,
-                                               "SPLANGO_FIRST_VISIT_GOAL",
+                                               "abtesting_FIRST_VISIT_GOAL",
                                                None)
 
                 if first_visit_goalname:
@@ -58,7 +58,7 @@ class RequestExperimentManager:
 
 
     def process_from_queue(self, action, params):
-        logging.info("SPLANGO! dequeued: %s (%s)" % (str(action), repr(params)))
+        logging.info("abtesting! dequeued: %s (%s)" % (str(action), repr(params)))
 
         if action == "enroll":
             exp = Experiment.objects.get(name=params["exp_name"])
@@ -71,7 +71,7 @@ class RequestExperimentManager:
                                   params["request_info"],
                                   extra=params.get("extra"))
 
-            logging.info("SPLANGO! goal! %s" % str(g))
+            logging.info("abtesting! goal! %s" % str(g))
 
 
         else:
@@ -98,40 +98,40 @@ class RequestExperimentManager:
 
 
     def render_js(self):
-        logging.info("SPLANGO! render_js")
+        logging.info("abtesting! render_js")
 
         prejs = ""
         postjs = ""
 
         if settings.DEBUG:
             prejs = "try { "
-            postjs = ' } catch(e) { alert("DEBUG notice: Splango encountered a javascript error when attempting to confirm this user as a human. Is jQuery loaded?\\n\\nYou may notice inconsistent experiment enrollments until this is fixed.\\n\\nDetails:\\n"+e.toString()); }'
+            postjs = ' } catch(e) { alert("DEBUG notice: abtesting encountered a javascript error when attempting to confirm this user as a human. Is jQuery loaded?\\n\\nYou may notice inconsistent experiment enrollments until this is fixed.\\n\\nDetails:\\n"+e.toString()); }'
 
         try:
-            url = reverse("splango.views.confirm_human")
+            url = reverse("abtesting.views.confirm_human")
         except NoReverseMatch:
-            raise RuntimeError('Must include splango urls')
+            raise RuntimeError('Must include abtesting urls')
 
         return """<script type='text/javascript'>%sjQuery.get("%s");%s</script>""" % (prejs, url, postjs)
 
 
     def confirm_human(self, reqdata=None):
-        logging.info("SPLANGO! Human confirmed!")
-        self.request.session[SPLANGO_STATE] = S_HUMAN
+        logging.info("abtesting! Human confirmed!")
+        self.request.session[abtesting_STATE] = S_HUMAN
 
-        for (action, params) in self.request.session.get(SPLANGO_QUEUED_UPDATES, []):
+        for (action, params) in self.request.session.get(abtesting_QUEUED_UPDATES, []):
             self.process_from_queue(action, params)
 
 
     def finish(self, response):
-        curstate = self.request.session.get(SPLANGO_STATE, S_UNKNOWN)
+        curstate = self.request.session.get(abtesting_STATE, S_UNKNOWN)
 
-        #logging.info("SPLANGO! finished... state=%s" % curstate)
+        #logging.info("abtesting! finished... state=%s" % curstate)
 
         curuser = self.request.user
 
         if self.user_at_init != curuser:
-            logging.info("SPLANGO! user status changed over request: %s --> %s" % (str(self.user_at_init), str(curuser)))
+            logging.info("abtesting! user status changed over request: %s --> %s" % (str(self.user_at_init), str(curuser)))
 
             if not(curuser.is_authenticated()):
                 # User logged out. It's a new session, nothing special.
@@ -143,10 +143,10 @@ class RequestExperimentManager:
                 # an existing Subject for this user, if exists,
                 # or simply set the subject.registered_as field.
 
-                self.request.session[SPLANGO_STATE] = S_HUMAN
+                self.request.session[abtesting_STATE] = S_HUMAN
                 # logging in counts as being proved a human
 
-                old_subject = self.request.session.get(SPLANGO_SUBJECT)
+                old_subject = self.request.session.get(abtesting_SUBJECT)
 
                 try:
                     existing_subject = Subject.objects.get(registered_as=curuser)
@@ -157,7 +157,7 @@ class RequestExperimentManager:
 
                     # whether we had an old_subject or not, we must
                     # set session to use our existing_subject
-                    self.request.session[SPLANGO_SUBJECT] = existing_subject
+                    self.request.session[abtesting_SUBJECT] = existing_subject
 
                 except Subject.DoesNotExist:
                     # promote current subject to registered!
@@ -173,7 +173,7 @@ class RequestExperimentManager:
 
         else:
             # shove queue into session
-            self.request.session.setdefault(SPLANGO_QUEUED_UPDATES, []).extend(self.queued_actions)
+            self.request.session.setdefault(abtesting_QUEUED_UPDATES, []).extend(self.queued_actions)
             self.queued_actions = []
 
             # and include JS if suitable for this response.
@@ -185,14 +185,14 @@ class RequestExperimentManager:
 
 
     def get_subject(self):
-        assert self.request.session[SPLANGO_STATE] == S_HUMAN, "Hey, you can't call get_subject until you know the subject is a human!"
+        assert self.request.session[abtesting_STATE] == S_HUMAN, "Hey, you can't call get_subject until you know the subject is a human!"
 
-        sub = self.request.session.get(SPLANGO_SUBJECT)
+        sub = self.request.session.get(abtesting_SUBJECT)
 
         if not sub:
-            sub = self.request.session[SPLANGO_SUBJECT] = Subject()
+            sub = self.request.session[abtesting_SUBJECT] = Subject()
             sub.save()
-            logging.info("SPLANGO! created subject: %s" % str(sub))
+            logging.info("abtesting! created subject: %s" % str(sub))
 
         return sub
 
@@ -200,8 +200,8 @@ class RequestExperimentManager:
     def declare_and_enroll(self, exp_name, variants):
         e = Experiment.declare(exp_name, variants)
 
-        if self.request.session[SPLANGO_STATE] != S_HUMAN:
-            logging.info("SPLANGO! choosing new random variant for non-human")
+        if self.request.session[abtesting_STATE] != S_HUMAN:
+            logging.info("abtesting! choosing new random variant for non-human")
             v = e.get_random_variant()
             self.enqueue("enroll", { "exp_name": e.name, "variant": v })
 
@@ -209,7 +209,7 @@ class RequestExperimentManager:
             sub = self.get_subject()
             sv = e.get_variant_for(sub)
             v = sv.variant
-            logging.info("SPLANGO! got variant %s for subject %s" % (str(v),str(sub)))
+            logging.info("abtesting! got variant %s for subject %s" % (str(v),str(sub)))
 
         return v
 

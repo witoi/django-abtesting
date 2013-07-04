@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 register = template.Library()
 
 
-CTX_PREFIX = "__splango__experiment__"
+CTX_PREFIX = "__abtesting__experiment__"
 
 
 class ExperimentNotDeclaredException(template.TemplateSyntaxError):
@@ -20,7 +20,7 @@ class ExperimentNotDeclaredException(template.TemplateSyntaxError):
 
 
 class RequestRequiredException(template.TemplateSyntaxError):
-    MESSAGE = "Use of splangotags requires the request context processor." \
+    MESSAGE = "Use of abtestingtags requires the request context processor." \
               "Please add django.core.context_processors.request to your settings.TEMPLATE_CONTEXT_PROCESSORS."
 
     def __init__(self, *args, **kwargs):
@@ -28,13 +28,13 @@ class RequestRequiredException(template.TemplateSyntaxError):
         super(RequestRequiredException).__init__(self.MESSAGE)
 
 
-class SplangoMiddlewareRequiredException(template.TemplateSyntaxError):
-    TEMPLATE = "Use of splangotags requires the splango middleware." \
-               "Please add splango.middleware.ExperimentsMiddleware to your settings.MIDDLEWARE_CLASSES."
+class abtestingMiddlewareRequiredException(template.TemplateSyntaxError):
+    TEMPLATE = "Use of abtestingtags requires the abtesting middleware." \
+               "Please add abtesting.middleware.ExperimentsMiddleware to your settings.MIDDLEWARE_CLASSES."
 
     def __init__(self, *args, **kwargs):
         logger.error(self.MESSAGE)
-        super(SplangoMiddlewareRequiredException).__init__(self.MESSAGE)
+        super(abtestingMiddlewareRequiredException).__init__(self.MESSAGE)
 
 
 class ExperimentNode(template.Node):
@@ -50,22 +50,22 @@ class ExperimentNode(template.Node):
         experiments = request.experiments
 
         if not experiments:
-            raise SplangoMiddlewareRequiredException
+            raise abtestingMiddlewareRequiredException
 
         expvariant = experiments.declare_and_enroll(self.exp_name, self.variants)
         context[CTX_PREFIX + self.exp_name] = expvariant
         logger.info('Experiment %s declared on %s with variant %s', self.exp_name, CTX_PREFIX + self.exp_name, expvariant)
         return ""
 
-@register.tag
-def experiment(parser, token):
+@register.tag('experiment')
+def do_experiment(parser, token):
     try:
         tag_name, exp_name, variants_label, variantstring = token.split_contents()
     except ValueError:
         raise template.TemplateSyntaxError, '%r tag requires exactly three arguments, e.g. {% experiment "signuptext" variants "control,free,trial" %}' % token.contents.split()[0]
 
     variants = map(lambda s: s.strip('\'" '), variantstring.split(","))
-    return ExperimentNode(exp_name, variants)
+    return ExperimentNode(exp_name.strip('\'" '), variants)
 
 
 class HypNode(template.Node):
@@ -85,8 +85,8 @@ class HypNode(template.Node):
 
         return ""
 
-@register.tag
-def hyp(parser, token):
+@register.tag('hyp')
+def do_hyp(parser, token):
     try:
         tag_name, exp_name, exp_variant = token.split_contents()
     except ValueError:
@@ -94,5 +94,5 @@ def hyp(parser, token):
 
     nodelist = parser.parse(('endhyp',))
     parser.delete_first_token()
-    return HypNode(nodelist, exp_name, exp_variant.strip('\'"'))
+    return HypNode(nodelist, exp_name.strip('\'" '), exp_variant.strip('\'"'))
 

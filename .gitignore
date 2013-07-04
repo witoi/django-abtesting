@@ -1,4 +1,4 @@
 *.pyc
 *.egg
-Splango.egg-info/
+django_abtesting.egg-info/
 example_project/

@@ -2,9 +2,9 @@
 {% load i18n %}
 {% load url from future %}
 
-{% block title %}Splango: Overview{% endblock %}
+{% block title %}abtesting: Overview{% endblock %}
 
-{% block breadcrumbs %}<div class="breadcrumbs"><a href="/admin/">{% trans 'Home' %}</a> &rsaquo; <a href="{% url 'splango-admin' %}">Splango</a>
+{% block breadcrumbs %}<div class="breadcrumbs"><a href="/admin/">{% trans 'Home' %}</a> &rsaquo; <a href="{% url 'abtesting-admin' %}">abtesting</a>
 
 {% if parent_url and parent_title %} &rsaquo; <a href="{{parent_url}}">{{ parent_title }}</a>{% endif %}
 
@@ -17,11 +17,11 @@
 {% if exps %}
 <ul>
   {% for exp in exps %}
-  <li><a href="{% url 'splango-experiment-detail' expname=exp.name %}">{{exp}}</a>
+  <li><a href="{% url 'abtesting-experiment-detail' expname=exp.name %}">{{exp}}</a>
     {% if exp.reports %}
     <ul>
       {% for rept in exp.reports %}
-      <li><a href="{% url 'splango-experiment-report' expname=exp.name report_id=rept.id %}">{{rept.title}}</a></li>
+      <li><a href="{% url 'abtesting-experiment-report' expname=exp.name report_id=rept.id %}">{{rept.title}}</a></li>
       {% endfor %}
     </ul>
     {% endif %}

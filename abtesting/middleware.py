@@ -1,4 +1,4 @@
-from splango import RequestExperimentManager
+from abtesting import RequestExperimentManager
 
 
 class ExperimentsMiddleware:

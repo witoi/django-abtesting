@@ -86,7 +86,7 @@ class GoalRecord(models.Model):
 
     @classmethod
     def record(cls, subject, goalname, request_info, extra=None):
-        logging.warn("Splango:goalrecord %r" % [subject, goalname, request_info, extra])
+        logging.warn("abtesting:goalrecord %r" % [subject, goalname, request_info, extra])
         goal, created = Goal.objects.get_or_create(name=goalname)
 
         gr,created = cls.objects.get_or_create(subject=subject, 
@@ -117,8 +117,8 @@ class GoalRecord(models.Model):
 class Enrollment(models.Model):
     """Identifies which variant a subject is assigned to in a given
     experiment."""
-    subject = models.ForeignKey('splango.Subject', editable=False)
-    experiment = models.ForeignKey('splango.Experiment', editable=False)
+    subject = models.ForeignKey('abtesting.Subject', editable=False)
+    experiment = models.ForeignKey('abtesting.Experiment', editable=False)
     created = models.DateTimeField(auto_now_add=True, db_index=True)
     variant = models.CharField(max_length=_NAME_LENGTH)
     
@@ -224,7 +224,7 @@ class ExperimentReport(models.Model):
             try:
                 g = Goal.objects.get(name=goal)
             except Goal.DoesNotExist:
-                logging.warn("Splango: No such goal <<%s>>." % goal)
+                logging.warn("abtesting: No such goal <<%s>>." % goal)
                 g = None
 
             variant_counts = []
